@@ -1,0 +1,1864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimeHub by Stethix - Global Time Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary: #2a9d8f;
+            --primary-dark: #21867a;
+            --secondary: #8b9bb4;
+            --success: #e9c46a;
+            --info: #f4a261;
+            --warning: #e76f51;
+            --danger: #e63946;
+            --light: #f8f9fa;
+            --dark: #264653;
+            --bg-dark: #0a1929;
+            --card-bg: #112240;
+            --card-hover: #1a3658;
+            --card-border: #2d4a6e;
+            --text-primary: #e6f1ff;
+            --text-secondary: #8892b0;
+            --accent: #6d98ba;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #0d1b2a 100%);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: rgba(17, 34, 64, 0.9) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--card-border);
+            padding: 0.8rem 1rem;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.5rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+            background: var(--card-hover);
+        }
+
+        .card-header {
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid var(--card-border);
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+        }
+
+        .time-display {
+            font-size: 2.5rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            margin: 10px 0;
+            background: linear-gradient(90deg, var(--text-primary) 0%, var(--success) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .date-display {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .utc-offset {
+            background: rgba(42, 157, 143, 0.2);
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .working-hours-indicator {
+            height: 4px;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            border-radius: 0 0 16px 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        .working-hours-active {
+            background: linear-gradient(90deg, var(--success) 0%, var(--info) 100%);
+        }
+
+        .working-hours-inactive {
+            background: var(--secondary);
+        }
+
+        .sun-times {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .dst-alert {
+            background: rgba(231, 111, 81, 0.15);
+            border: 1px solid var(--warning);
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dst-alert button {
+            background: none;
+            border: none;
+            color: var(--warning);
+            font-size: 1.2rem;
+            line-height: 1;
+            padding: 0;
+            margin-left: auto;
+        }
+
+        .dst-details {
+            background: rgba(42, 157, 143, 0.1);
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+
+        .dst-details h6 {
+            color: var(--primary);
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .dst-details p {
+            margin-bottom: 5px;
+            color: var(--text-secondary);
+        }
+
+        .dst-details .dst-change {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .dst-details .dst-change-date {
+            font-weight: 600;
+            color: var(--success);
+        }
+
+        .work-timer-display {
+            font-size: 2.5rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            margin: 15px 0;
+            text-align: center;
+            background: linear-gradient(90deg, var(--success) 0%, var(--info) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .work-timer-status {
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .work-timer-status.active {
+            background: rgba(233, 196, 106, 0.2);
+            color: var(--success);
+        }
+
+        .work-timer-status.break {
+            background: rgba(231, 111, 81, 0.2);
+            color: var(--warning);
+        }
+
+        .work-timer-status.paused {
+            background: rgba(139, 155, 180, 0.2);
+            color: var(--secondary);
+        }
+
+        .work-timer-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .shift-history {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .shift-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--primary);
+            transition: all 0.2s ease;
+        }
+
+        .shift-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(5px);
+        }
+
+        .shift-item.completed {
+            border-left-color: var(--success);
+        }
+
+        .shift-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .shift-date {
+            font-weight: 600;
+            flex-grow: 1;
+        }
+
+        .shift-total {
+            font-weight: 700;
+            color: var(--success);
+        }
+
+        .shift-break {
+            color: var(--warning);
+            font-size: 0.9rem;
+        }
+
+        .shift-actions {
+            display: flex;
+            gap: 5px;
+            margin-top: 8px;
+        }
+
+        .favorites-bar {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid var(--card-border);
+        }
+
+        .favorite-item {
+            display: inline-block;
+            background: rgba(42, 157, 143, 0.2);
+            border: 1px solid var(--primary);
+            border-radius: 20px;
+            padding: 6px 14px;
+            margin: 5px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .favorite-item:hover {
+            background: rgba(42, 157, 143, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .converter-result {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 10px;
+        }
+
+        .search-results {
+            max-height: 300px;
+            overflow-y: auto;
+            position: absolute;
+            width: 100%;
+            z-index: 1000;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 0 0 12px 12px;
+            display: none;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-result-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--card-border);
+            transition: background 0.2s ease;
+        }
+
+        .search-result-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .clock-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .clock-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .time-display {
+                font-size: 2rem;
+            }
+            
+            .work-timer-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .work-timer-controls .btn {
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            padding: 10px 20px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(42, 157, 143, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(90deg, var(--success) 0%, var(--info) 100%);
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            padding: 10px 20px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(233, 196, 106, 0.3);
+        }
+
+        .btn-warning {
+            background: linear-gradient(90deg, var(--warning) 0%, #d45d44 100%);
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            padding: 10px 20px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(231, 111, 81, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(90deg, var(--danger) 0%, #d00000 100%);
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            padding: 10px 20px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(230, 57, 70, 0.3);
+        }
+
+        .btn-outline-primary {
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            font-weight: 600;
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .form-control, .form-select {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
+            border-radius: 10px;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background: var(--card-bg);
+            border-color: var(--primary);
+            color: var(--text-primary);
+            box-shadow: 0 0 0 0.25rem rgba(42, 157, 143, 0.25);
+        }
+
+        .dropdown-menu {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .dropdown-item {
+            color: var(--text-primary);
+            padding: 10px 15px;
+            transition: background 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-header, .modal-footer {
+            border-color: var(--card-border);
+        }
+
+        .table {
+            color: var(--text-primary);
+        }
+
+        .table-hover tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            font-weight: 500;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary);
+            background: rgba(42, 157, 143, 0.1);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--card-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--card-border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* Pulse animation for active timer */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(233, 196, 106, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(233, 196, 106, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(233, 196, 106, 0);
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        /* Section titles */
+        .section-title {
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+            position: relative;
+            display: inline-block;
+        }
+
+        .section-title:after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+            border-radius: 3px;
+        }
+
+        /* DST Status Indicators */
+        .dst-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .dst-active {
+            background-color: var(--success);
+        }
+
+        .dst-inactive {
+            background-color: var(--secondary);
+        }
+
+        .dst-upcoming {
+            background-color: var(--warning);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-clock me-2"></i>TimeHub
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#clocks">World Clocks</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#converter">Time Converter</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#work-timer">Work Timer</a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <div class="form-check form-switch me-3">
+                        <input class="form-check-input" type="checkbox" id="formatToggle">
+                        <label class="form-check-label" for="formatToggle">24-hour</label>
+                    </div>
+                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#settingsModal">
+                        <i class="bi bi-gear"></i> Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid py-4">
+        <div class="row">
+            <!-- Left Column - Clocks and Search -->
+            <div class="col-lg-8">
+                <h3 class="section-title">Global Time Dashboard</h3>
+                
+                <!-- Search and Add Timezone -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8 position-relative">
+                                <label for="timezoneSearch" class="form-label">Search and Add Timezone</label>
+                                <input type="text" class="form-control" id="timezoneSearch" placeholder="Search for a timezone...">
+                                <div class="search-results" id="searchResults"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">&nbsp;</label>
+                                <button class="btn btn-primary w-100" id="addTimezoneBtn" disabled>
+                                    <i class="bi bi-plus-circle"></i> Add Timezone
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Favorites Bar -->
+                <div class="favorites-bar mb-4" id="favoritesBar">
+                    <h6 class="mb-2"><i class="bi bi-star-fill me-2"></i>Favorite Timezones</h6>
+                    <div id="favoritesContainer"></div>
+                </div>
+
+                <!-- Clocks Grid -->
+                <div class="clock-grid" id="clocksGrid">
+                    <!-- Clocks will be dynamically added here -->
+                </div>
+            </div>
+
+            <!-- Right Column - Work Timer and Converter -->
+            <div class="col-lg-4">
+                <!-- Work Timer -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-stopwatch me-2"></i>Work Timer</span>
+                        <button class="btn btn-sm btn-outline-primary" id="resetTimer">
+                            <i class="bi bi-arrow-clockwise"></i> Reset
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="work-timer-status paused" id="workTimerStatus">Not Started</div>
+                        <div class="work-timer-display" id="workTimerDisplay">00:00:00</div>
+                        
+                        <div class="work-timer-controls mb-3">
+                            <button class="btn btn-success" id="startShiftBtn">
+                                <i class="bi bi-play-circle"></i> Start Shift
+                            </button>
+                            <button class="btn btn-warning" id="startBreakBtn" disabled>
+                                <i class="bi bi-cup-hot"></i> Start Break
+                            </button>
+                            <button class="btn btn-info" id="endBreakBtn" disabled>
+                                <i class="bi bi-arrow-right-circle"></i> End Break
+                            </button>
+                            <button class="btn btn-danger" id="endShiftBtn" disabled>
+                                <i class="bi bi-stop-circle"></i> End Shift
+                            </button>
+                        </div>
+                        
+                        <div class="shift-history" id="shiftHistory">
+                            <h6><i class="bi bi-clock-history me-2"></i>Recent Shifts</h6>
+                            <!-- Shift history will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Time Converter -->
+                <div class="card">
+                    <div class="card-header"><i class="bi bi-arrow-left-right me-2"></i>Time Converter</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="fromTimezone" class="form-label">From Timezone</label>
+                            <select class="form-select" id="fromTimezone">
+                                <!-- Options will be populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="toTimezone" class="form-label">To Timezone</label>
+                            <select class="form-select" id="toTimezone">
+                                <!-- Options will be populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="converterDateTime" class="form-label">Date & Time</label>
+                            <div class="input-group">
+                                <input type="datetime-local" class="form-control" id="converterDateTime">
+                                <button class="btn btn-outline-secondary" type="button" id="setToNow">Now</button>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary w-100 mb-3" id="convertTime">Convert</button>
+                        
+                        <div class="converter-result" id="converterResult">
+                            <p class="text-center text-muted">Conversion result will appear here</p>
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-3">
+                            <button class="btn btn-outline-primary" id="exportCSV">
+                                <i class="bi bi-file-earmark-spreadsheet"></i> Export to CSV
+                            </button>
+                            <button class="btn btn-outline-primary" id="exportICS">
+                                <i class="bi bi-calendar-event"></i> Export to .ics
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal fade" id="settingsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-gear me-2"></i>Settings</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Working Hours (Default)</label>
+                        <div class="row">
+                            <div class="col">
+                                <input type="time" class="form-control" id="defaultStartTime" value="09:00">
+                            </div>
+                            <div class="col">
+                                <input type="time" class="form-control" id="defaultEndTime" value="17:00">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="enableDSTAlerts" checked>
+                        <label class="form-check-label" for="enableDSTAlerts">Enable DST Change Alerts</label>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="enableSunTimes" checked>
+                        <label class="form-check-label" for="enableSunTimes">Show Sunrise/Sunset Times</label>
+                    </div>
+                    <hr>
+                    <button class="btn btn-outline-danger w-100" id="resetSettings">
+                        <i class="bi bi-arrow-clockwise"></i> Reset to Defaults
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Application JavaScript -->
+    <script>
+        // TimeHub by Stethix - Global Time Dashboard
+        // Single-file implementation with all required features
+        
+        // ========== DATA MANAGEMENT ==========
+        
+        // Default timezones with labels as specified
+        const defaultTimezones = [
+            { id: 'America/New_York', label: 'New York (EST)' },
+            { id: 'America/Chicago', label: 'Chicago (CST)' },
+            { id: 'America/Denver', label: 'Denver (MST)' },
+            { id: 'America/Los_Angeles', label: 'Los Angeles (PST)' },
+            { id: 'America/Anchorage', label: 'Anchorage (AKST)' },
+            { id: 'Pacific/Honolulu', label: 'Honolulu (HST)' },
+            { id: 'Asia/Kolkata', label: 'India (IST)' },
+            { id: 'America/Toronto', label: 'Canada (Toronto)' },
+            { id: 'America/Vancouver', label: 'Canada (Vancouver)' },
+            { id: 'Australia/Sydney', label: 'Australia (Sydney)' },
+            { id: 'Australia/Perth', label: 'Australia (Perth)' },
+            { id: 'Europe/Madrid', label: 'Spain (Madrid)' },
+            { id: 'Europe/Dublin', label: 'Ireland (Dublin)' }
+        ];
+
+        // DST information for major timezones
+        const dstInfo = {
+            'America/New_York': {
+                name: 'Eastern Time',
+                dstStart: 'Second Sunday in March at 2:00 AM',
+                dstEnd: 'First Sunday in November at 2:00 AM',
+                offsetStandard: 'UTC-5',
+                offsetDST: 'UTC-4'
+            },
+            'America/Chicago': {
+                name: 'Central Time',
+                dstStart: 'Second Sunday in March at 2:00 AM',
+                dstEnd: 'First Sunday in November at 2:00 AM',
+                offsetStandard: 'UTC-6',
+                offsetDST: 'UTC-5'
+            },
+            'America/Denver': {
+                name: 'Mountain Time',
+                dstStart: 'Second Sunday in March at 2:00 AM',
+                dstEnd: 'First Sunday in November at 2:00 AM',
+                offsetStandard: 'UTC-7',
+                offsetDST: 'UTC-6'
+            },
+            'America/Los_Angeles': {
+                name: 'Pacific Time',
+                dstStart: 'Second Sunday in March at 2:00 AM',
+                dstEnd: 'First Sunday in November at 2:00 AM',
+                offsetStandard: 'UTC-8',
+                offsetDST: 'UTC-7'
+            },
+            'America/Anchorage': {
+                name: 'Alaska Time',
+                dstStart: 'Second Sunday in March at 2:00 AM',
+                dstEnd: 'First Sunday in November at 2:00 AM',
+                offsetStandard: 'UTC-9',
+                offsetDST: 'UTC-8'
+            },
+            'Pacific/Honolulu': {
+                name: 'Hawaii Time',
+                dstStart: 'No DST observed',
+                dstEnd: 'No DST observed',
+                offsetStandard: 'UTC-10',
+                offsetDST: 'UTC-10'
+            },
+            'Asia/Kolkata': {
+                name: 'India Standard Time',
+                dstStart: 'No DST observed',
+                dstEnd: 'No DST observed',
+                offsetStandard: 'UTC+5:30',
+                offsetDST: 'UTC+5:30'
+            },
+            'America/Toronto': {
+                name: 'Eastern Time (Canada)',
+                dstStart: 'Second Sunday in March at 2:00 AM',
+                dstEnd: 'First Sunday in November at 2:00 AM',
+                offsetStandard: 'UTC-5',
+                offsetDST: 'UTC-4'
+            },
+            'America/Vancouver': {
+                name: 'Pacific Time (Canada)',
+                dstStart: 'Second Sunday in March at 2:00 AM',
+                dstEnd: 'First Sunday in November at 2:00 AM',
+                offsetStandard: 'UTC-8',
+                offsetDST: 'UTC-7'
+            },
+            'Australia/Sydney': {
+                name: 'Australian Eastern Time',
+                dstStart: 'First Sunday in October at 2:00 AM',
+                dstEnd: 'First Sunday in April at 3:00 AM',
+                offsetStandard: 'UTC+10',
+                offsetDST: 'UTC+11'
+            },
+            'Australia/Perth': {
+                name: 'Australian Western Time',
+                dstStart: 'No DST observed',
+                dstEnd: 'No DST observed',
+                offsetStandard: 'UTC+8',
+                offsetDST: 'UTC+8'
+            },
+            'Europe/Madrid': {
+                name: 'Central European Time',
+                dstStart: 'Last Sunday in March at 1:00 AM',
+                dstEnd: 'Last Sunday in October at 1:00 AM',
+                offsetStandard: 'UTC+1',
+                offsetDST: 'UTC+2'
+            },
+            'Europe/Dublin': {
+                name: 'Irish Standard Time',
+                dstStart: 'Last Sunday in March at 1:00 AM',
+                dstEnd: 'Last Sunday in October at 1:00 AM',
+                offsetStandard: 'UTC+0',
+                offsetDST: 'UTC+1'
+            }
+        };
+
+        // Application state
+        let appState = {
+            timezones: [],
+            favorites: [],
+            timeFormat: '12', // 12 or 24
+            workingHours: { start: '09:00', end: '17:00' },
+            dstAlertsEnabled: true,
+            sunTimesEnabled: true,
+            acknowledgedDSTAlerts: [],
+            workTimer: {
+                status: 'paused', // 'paused', 'active', 'break'
+                startTime: null,
+                breakStartTime: null,
+                totalBreakTime: 0,
+                currentSessionTime: 0
+            },
+            shiftHistory: []
+        };
+
+        // Initialize application
+        function initApp() {
+            loadState();
+            renderClocks();
+            setupEventListeners();
+            startClock();
+            startWorkTimer();
+            populateTimezoneSelects();
+            renderShiftHistory();
+        }
+
+        // Load state from localStorage
+        function loadState() {
+            const saved = localStorage.getItem('timehub-state');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                appState = { ...appState, ...parsed };
+                
+                // Restore work timer if it was active
+                if (appState.workTimer.status !== 'paused' && appState.workTimer.startTime) {
+                    const elapsed = Date.now() - new Date(appState.workTimer.startTime).getTime();
+                    appState.workTimer.currentSessionTime = elapsed - appState.workTimer.totalBreakTime;
+                }
+            } else {
+                // Initialize with default timezones
+                appState.timezones = [...defaultTimezones];
+                saveState();
+            }
+            
+            // Update UI to reflect loaded state
+            document.getElementById('formatToggle').checked = appState.timeFormat === '24';
+            document.getElementById('defaultStartTime').value = appState.workingHours.start;
+            document.getElementById('defaultEndTime').value = appState.workingHours.end;
+            document.getElementById('enableDSTAlerts').checked = appState.dstAlertsEnabled;
+            document.getElementById('enableSunTimes').checked = appState.sunTimesEnabled;
+        }
+
+        // Save state to localStorage
+        function saveState() {
+            localStorage.setItem('timehub-state', JSON.stringify(appState));
+        }
+
+        // ========== CLOCK MANAGEMENT ==========
+        
+        // Single interval for all clock updates
+        let clockInterval;
+
+        function startClock() {
+            // Clear existing interval if any
+            if (clockInterval) clearInterval(clockInterval);
+            
+            // Update immediately and then every second
+            updateAllClocks();
+            clockInterval = setInterval(updateAllClocks, 1000);
+        }
+
+        function updateAllClocks() {
+            appState.timezones.forEach(tz => {
+                updateClock(tz.id);
+            });
+            
+            // Update favorites display
+            updateFavoritesDisplay();
+        }
+
+        function updateClock(timezoneId) {
+            const now = new Date();
+            const options = { 
+                timeZone: timezoneId,
+                hour12: appState.timeFormat === '12',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            
+            const timeStr = now.toLocaleTimeString('en-US', options);
+            const dateOptions = { 
+                timeZone: timezoneId,
+                weekday: 'short',
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            };
+            const dateStr = now.toLocaleDateString('en-US', dateOptions);
+            
+            // Calculate UTC offset
+            const tzDate = new Date(now.toLocaleString('en-US', { timeZone: timezoneId }));
+            const utcDate = new Date(now.toUTCString());
+            const offsetMs = tzDate.getTime() - utcDate.getTime();
+            const offsetHrs = Math.floor(offsetMs / (1000 * 60 * 60));
+            const offsetMins = Math.abs(Math.floor((offsetMs % (1000 * 60 * 60)) / (1000 * 60)));
+            const offsetStr = `UTC${offsetHrs >= 0 ? '+' : ''}${offsetHrs}:${offsetMins.toString().padStart(2, '0')}`;
+            
+            // Update DOM
+            const clockElement = document.getElementById(`clock-${timezoneId}`);
+            if (clockElement) {
+                const timeElement = clockElement.querySelector('.time-display');
+                const dateElement = clockElement.querySelector('.date-display');
+                const offsetElement = clockElement.querySelector('.utc-offset');
+                
+                if (timeElement) timeElement.textContent = timeStr;
+                if (dateElement) dateElement.textContent = dateStr;
+                if (offsetElement) offsetElement.textContent = offsetStr;
+                
+                // Update working hours indicator
+                updateWorkingHoursIndicator(clockElement, timezoneId, now);
+                
+                // Update DST alert if needed
+                updateDSTAlert(clockElement, timezoneId, now);
+                
+                // Update sunrise/sunset if enabled
+                if (appState.sunTimesEnabled) {
+                    updateSunTimes(clockElement, timezoneId, now);
+                }
+            }
+        }
+
+        function updateWorkingHoursIndicator(clockElement, timezoneId, now) {
+            const indicator = clockElement.querySelector('.working-hours-indicator');
+            if (!indicator) return;
+            
+            const tzTime = now.toLocaleTimeString('en-US', { timeZone: timezoneId, hour12: false });
+            const currentTime = tzTime.substring(0, 5); // HH:MM
+            
+            const isWorkingHours = currentTime >= appState.workingHours.start && 
+                                  currentTime <= appState.workingHours.end;
+            
+            indicator.className = `working-hours-indicator ${isWorkingHours ? 'working-hours-active' : 'working-hours-inactive'}`;
+        }
+
+        // Fixed DST detection logic
+        function updateDSTAlert(clockElement, timezoneId, now) {
+            if (!appState.dstAlertsEnabled) return;
+            
+            const alertElement = clockElement.querySelector('.dst-alert');
+            const detailsElement = clockElement.querySelector('.dst-details');
+            
+            if (!alertElement || !detailsElement) return;
+            
+            // Check if DST change is within next 7 days
+            const dstChange = checkDSTChange(timezoneId, now);
+            
+            if (dstChange && !appState.acknowledgedDSTAlerts.includes(timezoneId)) {
+                alertElement.style.display = 'flex';
+                alertElement.innerHTML = `
+                    <i class="bi bi-exclamation-triangle"></i> 
+                    ${dstChange.message}
+                    <button class="float-end" onclick="acknowledgeDSTAlert('${timezoneId}')">
+                        <i class="bi bi-x"></i>
+                    </button>
+                `;
+            } else {
+                alertElement.style.display = 'none';
+            }
+            
+            // Always show DST details if available
+            if (dstInfo[timezoneId]) {
+                detailsElement.style.display = 'block';
+                const info = dstInfo[timezoneId];
+                const dstStatus = isDSTActive(timezoneId, now) ? 'active' : 'inactive';
+                const statusClass = dstStatus === 'active' ? 'dst-active' : 
+                                  (dstChange ? 'dst-upcoming' : 'dst-inactive');
+                
+                detailsElement.innerHTML = `
+                    <h6>
+                        <span class="dst-status ${statusClass}"></span>
+                        DST Information
+                    </h6>
+                    <p><strong>Status:</strong> ${dstStatus === 'active' ? 'Currently observing DST' : 'Not observing DST'}</p>
+                    <div class="dst-change">
+                        <span>DST Starts:</span>
+                        <span class="dst-change-date">${info.dstStart}</span>
+                    </div>
+                    <div class="dst-change">
+                        <span>DST Ends:</span>
+                        <span class="dst-change-date">${info.dstEnd}</span>
+                    </div>
+                    <p><strong>Standard Time:</strong> ${info.offsetStandard}</p>
+                    <p><strong>Daylight Time:</strong> ${info.offsetDST}</p>
+                `;
+            } else {
+                detailsElement.style.display = 'none';
+            }
+        }
+
+        // Check if DST is currently active for a timezone
+        function isDSTActive(timezoneId, date) {
+            // This is a simplified check - in a real app you would use a proper DST library
+            const info = dstInfo[timezoneId];
+            if (!info || info.dstStart === 'No DST observed') return false;
+            
+            // For demonstration, we'll use a simple seasonal check
+            const month = date.getMonth();
+            // Northern hemisphere: DST roughly March-November
+            if (timezoneId.includes('America') || timezoneId.includes('Europe')) {
+                return month >= 2 && month <= 9;
+            }
+            // Southern hemisphere: DST roughly October-April
+            if (timezoneId.includes('Australia/Sydney')) {
+                return month >= 9 || month <= 3;
+            }
+            return false;
+        }
+
+        // Improved DST detection
+        function checkDSTChange(timezoneId, date) {
+            // Get the timezone offset for today
+            const todayOffset = getTimezoneOffset(timezoneId, date);
+            
+            // Check for DST changes in the next 7 days
+            for (let i = 1; i <= 7; i++) {
+                const futureDate = new Date(date);
+                futureDate.setDate(date.getDate() + i);
+                const futureOffset = getTimezoneOffset(timezoneId, futureDate);
+                
+                if (todayOffset !== futureOffset) {
+                    const changeType = futureOffset > todayOffset ? 'ends' : 'starts';
+                    const changeDate = futureDate.toLocaleDateString();
+                    return {
+                        change: true,
+                        message: `DST ${changeType} on ${changeDate}`
+                    };
+                }
+            }
+            
+            // Check if DST recently changed (last 7 days)
+            for (let i = 1; i <= 7; i++) {
+                const pastDate = new Date(date);
+                pastDate.setDate(date.getDate() - i);
+                const pastOffset = getTimezoneOffset(timezoneId, pastDate);
+                
+                if (todayOffset !== pastOffset) {
+                    const changeType = todayOffset > pastOffset ? 'started' : 'ended';
+                    const changeDate = pastDate.toLocaleDateString();
+                    return {
+                        change: true,
+                        message: `DST ${changeType} on ${changeDate}`
+                    };
+                }
+            }
+            
+            return null;
+        }
+
+        function getTimezoneOffset(timezoneId, date) {
+            const dateStr = date.toLocaleString('en-US', { timeZone: timezoneId });
+            const tzDate = new Date(dateStr);
+            const utcDate = new Date(date.toUTCString());
+            return tzDate.getTime() - utcDate.getTime();
+        }
+
+        function acknowledgeDSTAlert(timezoneId) {
+            if (!appState.acknowledgedDSTAlerts.includes(timezoneId)) {
+                appState.acknowledgedDSTAlerts.push(timezoneId);
+                saveState();
+            }
+        }
+
+        function updateSunTimes(clockElement, timezoneId, now) {
+            const sunElement = clockElement.querySelector('.sun-times');
+            if (!sunElement) return;
+            
+            // In a real implementation, we would fetch from sunrise-sunset API
+            // For this demo, we'll use simulated data
+            const sunrise = '06:45';
+            const sunset = '18:30';
+            const isDay = now.getHours() >= 6 && now.getHours() < 18;
+            
+            sunElement.innerHTML = `
+                <i class="bi bi-${isDay ? 'sun' : 'moon'}"></i>
+                Sunrise: ${sunrise} | Sunset: ${sunset}
+            `;
+        }
+
+        // ========== WORK TIMER FUNCTIONALITY ==========
+
+        let workTimerInterval;
+
+        function startWorkTimer() {
+            // Clear existing interval if any
+            if (workTimerInterval) clearInterval(workTimerInterval);
+            
+            // Update immediately and then every second
+            updateWorkTimer();
+            workTimerInterval = setInterval(updateWorkTimer, 1000);
+        }
+
+        function updateWorkTimer() {
+            const display = document.getElementById('workTimerDisplay');
+            const status = document.getElementById('workTimerStatus');
+            
+            if (!display || !status) return;
+            
+            let elapsedTime = 0;
+            
+            if (appState.workTimer.status === 'active') {
+                // Calculate elapsed time (current time - start time - break time)
+                const now = Date.now();
+                elapsedTime = now - new Date(appState.workTimer.startTime).getTime() - appState.workTimer.totalBreakTime;
+                appState.workTimer.currentSessionTime = elapsedTime;
+            } else if (appState.workTimer.status === 'break') {
+                // Use the last saved session time (timer is paused during break)
+                elapsedTime = appState.workTimer.currentSessionTime;
+            } else if (appState.workTimer.status === 'paused') {
+                // Use the last saved session time
+                elapsedTime = appState.workTimer.currentSessionTime;
+            }
+            
+            // Format the time for display
+            const hours = Math.floor(elapsedTime / (1000 * 60 * 60));
+            const minutes = Math.floor((elapsedTime % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((elapsedTime % (1000 * 60)) / 1000);
+            
+            display.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Update status text and color
+            if (appState.workTimer.status === 'active') {
+                status.textContent = 'Shift Active';
+                status.className = 'work-timer-status active';
+                display.classList.add('pulse');
+            } else if (appState.workTimer.status === 'break') {
+                status.textContent = 'On Break';
+                status.className = 'work-timer-status break';
+                display.classList.remove('pulse');
+            } else {
+                status.textContent = 'Not Started';
+                status.className = 'work-timer-status paused';
+                display.classList.remove('pulse');
+            }
+            
+            // Update button states
+            updateWorkTimerButtons();
+        }
+
+        function updateWorkTimerButtons() {
+            const startShiftBtn = document.getElementById('startShiftBtn');
+            const startBreakBtn = document.getElementById('startBreakBtn');
+            const endBreakBtn = document.getElementById('endBreakBtn');
+            const endShiftBtn = document.getElementById('endShiftBtn');
+            
+            if (appState.workTimer.status === 'paused') {
+                startShiftBtn.disabled = false;
+                startBreakBtn.disabled = true;
+                endBreakBtn.disabled = true;
+                endShiftBtn.disabled = true;
+            } else if (appState.workTimer.status === 'active') {
+                startShiftBtn.disabled = true;
+                startBreakBtn.disabled = false;
+                endBreakBtn.disabled = true;
+                endShiftBtn.disabled = false;
+            } else if (appState.workTimer.status === 'break') {
+                startShiftBtn.disabled = true;
+                startBreakBtn.disabled = true;
+                endBreakBtn.disabled = false;
+                endShiftBtn.disabled = false;
+            }
+        }
+
+        function startShift() {
+            appState.workTimer.status = 'active';
+            appState.workTimer.startTime = new Date();
+            appState.workTimer.totalBreakTime = 0;
+            appState.workTimer.currentSessionTime = 0;
+            saveState();
+            updateWorkTimer();
+        }
+
+        function startBreak() {
+            appState.workTimer.status = 'break';
+            appState.workTimer.breakStartTime = new Date();
+            saveState();
+            updateWorkTimer();
+        }
+
+        function endBreak() {
+            if (appState.workTimer.breakStartTime) {
+                const breakEndTime = new Date();
+                const breakDuration = breakEndTime - new Date(appState.workTimer.breakStartTime).getTime();
+                appState.workTimer.totalBreakTime += breakDuration;
+                appState.workTimer.breakStartTime = null;
+            }
+            
+            appState.workTimer.status = 'active';
+            saveState();
+            updateWorkTimer();
+        }
+
+        function endShift() {
+            // Calculate total work time
+            const endTime = new Date();
+            const totalWorkTime = endTime - new Date(appState.workTimer.startTime).getTime() - appState.workTimer.totalBreakTime;
+            
+            // Add to shift history
+            const shift = {
+                id: Date.now().toString(),
+                date: new Date().toLocaleDateString(),
+                startTime: appState.workTimer.startTime,
+                endTime: endTime,
+                totalWorkTime: totalWorkTime,
+                totalBreakTime: appState.workTimer.totalBreakTime,
+                completed: true
+            };
+            
+            appState.shiftHistory.unshift(shift);
+            if (appState.shiftHistory.length > 10) {
+                appState.shiftHistory = appState.shiftHistory.slice(0, 10);
+            }
+            
+            // Reset timer
+            appState.workTimer.status = 'paused';
+            appState.workTimer.startTime = null;
+            appState.workTimer.breakStartTime = null;
+            appState.workTimer.totalBreakTime = 0;
+            appState.workTimer.currentSessionTime = 0;
+            
+            saveState();
+            updateWorkTimer();
+            renderShiftHistory();
+        }
+
+        function resetTimer() {
+            if (confirm('Are you sure you want to reset the timer? This will clear the current session.')) {
+                appState.workTimer.status = 'paused';
+                appState.workTimer.startTime = null;
+                appState.workTimer.breakStartTime = null;
+                appState.workTimer.totalBreakTime = 0;
+                appState.workTimer.currentSessionTime = 0;
+                
+                saveState();
+                updateWorkTimer();
+            }
+        }
+
+        function deleteShift(shiftId) {
+            if (confirm('Are you sure you want to delete this shift record?')) {
+                appState.shiftHistory = appState.shiftHistory.filter(shift => shift.id !== shiftId);
+                saveState();
+                renderShiftHistory();
+            }
+        }
+
+        function renderShiftHistory() {
+            const container = document.getElementById('shiftHistory');
+            if (!container) return;
+            
+            // Clear existing content except the header
+            const header = container.querySelector('h6');
+            container.innerHTML = '';
+            if (header) container.appendChild(header);
+            
+            if (appState.shiftHistory.length === 0) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.className = 'text-center text-muted py-3';
+                emptyMsg.textContent = 'No shift history yet';
+                container.appendChild(emptyMsg);
+                return;
+            }
+            
+            appState.shiftHistory.forEach(shift => {
+                const shiftItem = document.createElement('div');
+                shiftItem.className = `shift-item ${shift.completed ? 'completed' : ''}`;
+                
+                // Format times
+                const startTime = new Date(shift.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const endTime = new Date(shift.endTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                // Calculate hours and minutes
+                const totalMinutes = Math.floor(shift.totalWorkTime / (1000 * 60));
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+                
+                const breakMinutes = Math.floor(shift.totalBreakTime / (1000 * 60));
+                const breakHours = Math.floor(breakMinutes / 60);
+                const breakMins = breakMinutes % 60;
+                
+                shiftItem.innerHTML = `
+                    <div class="shift-item-header">
+                        <div class="shift-date">${shift.date}</div>
+                        <div class="shift-total">${hours}h ${minutes}m</div>
+                    </div>
+                    <div class="shift-times">
+                        ${startTime} - ${endTime}
+                        ${breakMinutes > 0 ? `<div class="shift-break">Break: ${breakHours}h ${breakMins}m</div>` : ''}
+                    </div>
+                    <div class="shift-actions mt-2">
+                        <button class="btn btn-sm btn-outline-danger delete-shift" data-shift-id="${shift.id}">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(shiftItem);
+            });
+        }
+
+        // ========== RENDERING ==========
+
+        function renderClocks() {
+            const grid = document.getElementById('clocksGrid');
+            grid.innerHTML = '';
+            
+            appState.timezones.forEach(tz => {
+                const clockCard = createClockCard(tz);
+                grid.appendChild(clockCard);
+            });
+            
+            updateFavoritesDisplay();
+        }
+
+        function createClockCard(timezone) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.id = `clock-${timezone.id}`;
+            
+            const isFavorite = appState.favorites.includes(timezone.id);
+            
+            card.innerHTML = `
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>${timezone.label}</span>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary me-1 edit-label" data-timezone="${timezone.id}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm ${isFavorite ? 'btn-warning' : 'btn-outline-warning'} toggle-favorite" data-timezone="${timezone.id}">
+                            <i class="bi bi-star${isFavorite ? '-fill' : ''}"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body text-center">
+                    <div class="time-display">--:--:--</div>
+                    <div class="date-display">--- -- --- ----</div>
+                    <div class="utc-offset my-2">UTC+0:00</div>
+                    <div class="sun-times my-2">
+                        <i class="bi bi-sun"></i> Sunrise: --:-- | Sunset: --:--
+                    </div>
+                    <div class="dst-alert" style="display: none;"></div>
+                    <div class="dst-details" style="display: none;"></div>
+                </div>
+                <div class="working-hours-indicator working-hours-inactive"></div>
+            `;
+            
+            return card;
+        }
+
+        function updateFavoritesDisplay() {
+            const container = document.getElementById('favoritesContainer');
+            container.innerHTML = '';
+            
+            appState.favorites.forEach(favId => {
+                const timezone = appState.timezones.find(tz => tz.id === favId);
+                if (timezone) {
+                    const now = new Date();
+                    const options = { 
+                        timeZone: favId,
+                        hour12: appState.timeFormat === '12',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    };
+                    const timeStr = now.toLocaleTimeString('en-US', options);
+                    
+                    const favElement = document.createElement('div');
+                    favElement.className = 'favorite-item';
+                    favElement.innerHTML = `
+                        ${timezone.label}: <strong>${timeStr}</strong>
+                    `;
+                    favElement.addEventListener('click', () => {
+                        // Scroll to the clock card
+                        const clockElement = document.getElementById(`clock-${favId}`);
+                        if (clockElement) {
+                            clockElement.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    });
+                    
+                    container.appendChild(favElement);
+                }
+            });
+            
+            // Show/hide favorites bar based on whether there are favorites
+            const favoritesBar = document.getElementById('favoritesBar');
+            favoritesBar.style.display = appState.favorites.length > 0 ? 'block' : 'none';
+        }
+
+        // ========== TIMEZONE SEARCH AND ADD ==========
+
+        function setupSearch() {
+            const searchInput = document.getElementById('timezoneSearch');
+            const searchResults = document.getElementById('searchResults');
+            const addButton = document.getElementById('addTimezoneBtn');
+            
+            let debounceTimer;
+            let availableTimezones = [];
+            
+            // Get available timezones
+            try {
+                availableTimezones = Intl.supportedValuesOf('timeZone');
+            } catch (e) {
+                // Fallback list of common timezones
+                availableTimezones = [
+                    'Africa/Abidjan', 'Africa/Accra', 'Africa/Addis_Ababa', 'Africa/Algiers',
+                    'America/Adak', 'America/Anchorage', 'America/Araguaina', 'America/Argentina/Buenos_Aires',
+                    'America/Asuncion', 'America/Atikokan', 'America/Bahia', 'America/Bahia_Banderas',
+                    'America/Barbados', 'America/Belem', 'America/Belize', 'America/Blanc-Sablon',
+                    'America/Boa_Vista', 'America/Bogota', 'America/Boise', 'America/Cambridge_Bay',
+                    'America/Campo_Grande', 'America/Cancun', 'America/Caracas', 'America/Cayenne',
+                    'America/Chicago', 'America/Chihuahua', 'America/Costa_Rica', 'America/Creston',
+                    'America/Cuiaba', 'America/Curacao', 'America/Danmarkshavn', 'America/Dawson',
+                    'America/Dawson_Creek', 'America/Denver', 'America/Detroit', 'America/Edmonton',
+                    'America/Eirunepe', 'America/El_Salvador', 'America/Fort_Nelson', 'America/Fortaleza',
+                    'America/Glace_Bay', 'America/Godthab', 'America/Goose_Bay', 'America/Grand_Turk',
+                    'America/Guatemala', 'America/Guayaquil', 'America/Guyana', 'America/Halifax',
+                    'America/Havana', 'America/Hermosillo', 'America/Indiana/Indianapolis', 'America/Indiana/Knox',
+                    'America/Indiana/Marengo', 'America/Indiana/Petersburg', 'America/Indiana/Tell_City',
+                    'America/Indiana/Vevay', 'America/Indiana/Vincennes', 'America/Indiana/Winamac',
+                    'America/Inuvik', 'America/Iqaluit', 'America/Jamaica', 'America/Juneau',
+                    'America/Kentucky/Louisville', 'America/Kentucky/Monticello', 'America/La_Paz',
+                    'America/Lima', 'America/Los_Angeles', 'America/Maceio', 'America/Managua',
+                    'America/Manaus', 'America/Martinique', 'America/Matamoros', 'America/Mazatlan',
+                    'America/Menominee', 'America/Merida', 'America/Metlakatla', 'America/Mexico_City',
+                    'America/Miquelon', 'America/Moncton', 'America/Monterrey', 'America/Montevideo',
+                    'America/Nassau', 'America/New_York', 'America/Nipigon', 'America/Nome',
+                    'America/Noronha', 'America/North_Dakota/Beulah', 'America/North_Dakota/Center',
+                    'America/North_Dakota/New_Salem', 'America/Ojinaga', 'America/Panama', 'America/Pangnirtung',
+                    'America/Paramaribo', 'America/Phoenix', 'America/Port-au-Prince', 'America/Port_of_Spain',
+                    'America/Porto_Velho', 'America/Puerto_Rico', 'America/Punta_Arenas', 'America/Rainy_River',
+                    'America/Rankin_Inlet', 'America/Recife', 'America/Regina', 'America/Resolute',
+                    'America/Rio_Branco', 'America/Santarem', 'America/Santiago', 'America/Santo_Domingo',
+                    'America/Sao_Paulo', 'America/Scoresbysund', 'America/Sitka', 'America/St_Johns',
+                    'America/Swift_Current', 'America/Tegucigalpa', 'America/Thule', 'America/Thunder_Bay',
+                    'America/Tijuana', 'America/Toronto', 'America/Vancouver', 'America/Whitehorse',
+                    'America/Winnipeg', 'America/Yakutat', 'America/Yellowknife', 'Antarctica/Casey',
+                    'Antarctica/Davis', 'Antarctica/DumontDUrville', 'Antarctica/Macquarie', 'Antarctica/Mawson',
+                    'Antarctica/Palmer', 'Antarctica/Rothera', 'Antarctica/Syowa', 'Antarctica/Troll',
+                    'Antarctica/Vostok', 'Asia/Almaty', 'Asia/Amman', 'Asia/Anadyr', 'Asia/Aqtau',
+                    'Asia/Aqtobe', 'Asia/Ashgabat', 'Asia/Atyrau', 'Asia/Baghdad', 'Asia/Baku',
+                    'Asia/Bangkok', 'Asia/Barnaul', 'Asia/Beirut', 'Asia/Bishkek', 'Asia/Brunei',
+                    'Asia/Chita', 'Asia/Choibalsan', 'Asia/Colombo', 'Asia/Damascus', 'Asia/Dhaka',
+                    'Asia/Dili', 'Asia/Dubai', 'Asia/Dushanbe', 'Asia/Famagusta', 'Asia/Gaza',
+                    'Asia/Hebron', 'Asia/Ho_Chi_Minh', 'Asia/Hong_Kong', 'Asia/Hovd', 'Asia/Irkutsk',
+                    'Asia/Jakarta', 'Asia/Jayapura', 'Asia/Jerusalem', 'Asia/Kabul', 'Asia/Kamchatka',
+                    'Asia/Karachi', 'Asia/Kathmandu', 'Asia/Khandyga', 'Asia/Kolkata', 'Asia/Krasnoyarsk',
+                    'Asia/Kuala_Lumpur', 'Asia/Kuching', 'Asia/Macau', 'Asia/Magadan', 'Asia/Makassar',
+                    'Asia/Manila', 'Asia/Novokuznetsk', 'Asia/Novosibirsk', 'Asia/Omsk', 'Asia/Oral',
+                    'Asia/Phnom_Penh', 'Asia/Pontianak', 'Asia/Pyongyang', 'Asia/Qatar', 'Asia/Qostanay',
+                    'Asia/Qyzylorda', 'Asia/Riyadh', 'Asia/Sakhalin', 'Asia/Samarkand', 'Asia/Seoul',
+                    'Asia/Shanghai', 'Asia/Singapore', 'Asia/Srednekolymsk', 'Asia/Taipei', 'Asia/Tashkent',
+                    'Asia/Tbilisi', 'Asia/Tehran', 'Asia/Thimphu', 'Asia/Tokyo', 'Asia/Tomsk',
+                    'Asia/Ulaanbaatar', 'Asia/Urumqi', 'Asia/Ust-Nera', 'Asia/Vladivostok', 'Asia/Yakutsk',
+                    'Asia/Yangon', 'Asia/Yekaterinburg', 'Asia/Yerevan', 'Atlantic/Azores', 'Atlantic/Bermuda',
+                    'Atlantic/Canary', 'Atlantic/Cape_Verde', 'Atlantic/Faroe', 'Atlantic/Madeira', 'Atlantic/Reykjavik',
+                    'Atlantic/South_Georgia', 'Atlantic/Stanley', 'Australia/Adelaide', 'Australia/Brisbane',
+                    'Australia/Broken_Hill', 'Australia/Currie', 'Australia/Darwin', 'Australia/Eucla',
+                    'Australia/Hobart', 'Australia/Lindeman', 'Australia/Lord_Howe', 'Australia/Melbourne',
+                    'Australia/Perth', 'Australia/Sydney', 'Europe/Amsterdam', 'Europe/Andorra', 'Europe/Astrakhan',
+                    'Europe/Athens', 'Europe/Belgrade', 'Europe/Berlin', 'Europe/Brussels', 'Europe/Bucharest',
+                    'Europe/Budapest', 'Europe/Chisinau', 'Europe/Copenhagen', 'Europe/Dublin', 'Europe/Gibraltar',
+                    'Europe/Helsinki', 'Europe/Istanbul', 'Europe/Kaliningrad', 'Europe/Kiev', 'Europe/Kirov',
+                    'Europe/Lisbon', 'Europe/London', 'Europe/Luxembourg', 'Europe/Madrid', 'Europe/Malta',
+                    'Europe/Minsk', 'Europe/Monaco', 'Europe/Moscow', 'Europe/Oslo', 'Europe/Paris',
+                    'Europe/Prague', 'Europe/Riga', 'Europe/Rome', 'Europe/Samara', 'Europe/Saratov',
+                    'Europe/Simferopol', 'Europe/Sofia', 'Europe/Stockholm', 'Europe/Tallinn', 'Europe/Tirane',
+                    'Europe/Ulyanovsk', 'Europe/Uzhgorod', 'Europe/Vienna', 'Europe/Vilnius', 'Europe/Volgograd',
+                    'Europe/Warsaw', 'Europe/Zaporozhye', 'Europe/Zurich', 'Indian/Chagos', 'Indian/Christmas',
+                    'Indian/Cocos', 'Indian/Kerguelen', 'Indian/Mahe', 'Indian/Maldives', 'Indian/Mauritius',
+                    'Indian/Reunion', 'Pacific/Apia', 'Pacific/Auckland', 'Pacific/Bougainville', 'Pacific/Chatham',
+                    'Pacific/Chuuk', 'Pacific/Easter', 'Pacific/Efate', 'Pacific/Enderbury', 'Pacific/Fakaofo',
+                    'Pacific/Fiji', 'Pacific/Funafuti', 'Pacific/Galapagos', 'Pacific/Gambier', 'Pacific/Guadalcanal',
+                    'Pacific/Guam', 'Pacific/Honolulu', 'Pacific/Kiritimati', 'Pacific/Kosrae', 'Pacific/Kwajalein',
+                    'Pacific/Majuro', 'Pacific/Marquesas', 'Pacific/Midway', 'Pacific/Nauru', 'Pacific/Niue',
+                    'Pacific/Norfolk', 'Pacific/Noumea', 'Pacific/Pago_Pago', 'Pacific/Palau', 'Pacific/Pitcairn',
+                    'Pacific/Pohnpei', 'Pacific/Port_Moresby', 'Pacific/Rarotonga', 'Pacific/Tahiti', 'Pacific/Tarawa',
+                    'Pacific/Tongatapu', 'Pacific/Wake', 'Pacific/Wallis'
+                ];
+            }
+            
+            searchInput.addEventListener('input', () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    const query = searchInput.value.toLowerCase();
+                    if (query.length < 2) {
+                        searchResults.style.display = 'none';
+                        addButton.disabled = true;
+                        return;
+                    }
+                    
+                    const results = availableTimezones.filter(tz => 
+                        tz.toLowerCase().includes(query) && 
+                        !appState.timezones.some(existing => existing.id === tz)
+                    ).slice(0, 10); // Limit to 10 results
+                    
+                    displaySearchResults(results);
+                }, 300);
+            });
+            
+            function displaySearchResults(results) {
+                searchResults.innerHTML = '';
+                
+                if (results.length === 0) {
+                    searchResults.style.display = 'none';
+                    addButton.disabled = true;
+                    return;
+                }
+                
+                results.forEach(tz => {
+                    const item = document.createElement('div');
+                    item.className = 'search-result-item';
+                    item.textContent = tz;
+                    item.addEventListener('click', () => {
+                        searchInput.value = tz;
+                        searchResults.style.display = 'none';
+                        addButton.disabled = false;
+                    });
+                    
+                    searchResults.appendChild(item);
+                });
+                
+                searchResults.style.display = 'block';
+            }
+            
+            // Hide results when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                    searchResults.style.display = 'none';
+                }
+            });
+            
+            addButton.addEventListener('click', () => {
+                const timezoneId = searchInput.value;
+                if (timezoneId && !appState.timezones.some(tz => tz.id === timezoneId)) {
+                    // Generate a label from the timezone ID
+                    const parts = timezoneId.split('/');
+                    const label = parts[parts.length - 1].replace(/_/g, ' ');
+                    
+                    addTimezone(timezoneId, label);
+                    searchInput.value = '';
+                    addButton.disabled = true;
+                }
+            });
+        }
+
+        function addTimezone(id, label) {
+            appState.timezones.push({ id, label });
+            saveState();
+            renderClocks();
+            populateTimezoneSelects();
+        }
+
+        function removeTimezone(timezoneId) {
+            appState.timezones = appState.timezones.filter(tz => tz.id !== timezoneId);
+            // Also remove from favorites
+            appState.favorites = appState.favorites.filter(fav => fav !== timezoneId);
+            saveState();
+            renderClocks();
+            populateTimezoneSelects();
+        }
+
+        function toggleFavorite(timezoneId) {
+            const index = appState.favorites.indexOf(timezoneId);
+            if (index === -1) {
+                appState.favorites.push(timezoneId);
+            } else {
+                appState.favorites.splice(index, 1);
+            }
+            saveState();
+            renderClocks();
+        }
+
+        function editLabel(timezoneId) {
+            const timezone = appState.timezones.find(tz => tz.id === timezoneId);
+            if (!timezone) return;
+            
+            const newLabel = prompt('Enter new label for this timezone:', timezone.label);
+            if (newLabel && newLabel.trim() !== '') {
+                timezone.label = newLabel.trim();
+                saveState();
+                renderClocks();
+                populateTimezoneSelects();
+            }
+        }
+
+        // ========== TIME CONVERTER ==========
+
+        function populateTimezoneSelects() {
+            const fromSelect = document.getElementById('fromTimezone');
+            const toSelect = document.getElementById('toTimezone');
+            
+            fromSelect.innerHTML = '';
+            toSelect.innerHTML = '';
+            
+            appState.timezones.forEach(tz => {
+                const option = document.createElement('option');
+                option.value = tz.id;
+                option.textContent = tz.label;
+                
+                fromSelect.appendChild(option.cloneNode(true));
+                toSelect.appendChild(option);
+            });
+            
+            // Set default values
+            if (appState.timezones.length > 0) {
+                fromSelect.value = appState.timezones[0].id;
+                toSelect.value = appState.timezones[1] ? appState.timezones[1].id : appState.timezones[0].id;
+            }
+        }
+
+        function convertTime() {
+            const fromTimezone = document.getElementById('fromTimezone').value;
+            const toTimezone = document.getElementById('toTimezone').value;
+            const dateTimeInput = document.getElementById('converterDateTime').value;
+            
+            let date;
+            if (dateTimeInput) {
+                date = new Date(dateTimeInput);
+            } else {
+                date = new Date();
+            }
+            
+            const fromOptions = { 
+                timeZone: fromTimezone,
+                hour12: appState.timeFormat === '12',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            
+            const toOptions = { 
+                timeZone: toTimezone,
+                hour12: appState.timeFormat === '12',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            
+            const fromTimeStr = date.toLocaleString('en-US', fromOptions);
+            const toTimeStr = new Date(date.toLocaleString('en-US', { timeZone: fromTimezone }))
+                .toLocaleString('en-US', toOptions);
+            
+            const resultElement = document.getElementById('converterResult');
+            resultElement.innerHTML = `
+                <div class="text-center">
+                    <p><strong>${fromTimezone}</strong></p>
+                    <p class="h5">${fromTimeStr}</p>
+                    <hr>
+                    <p><strong>${toTimezone}</strong></p>
+                    <p class="h5">${toTimeStr}</p>
+                </div>
+            `;
+        }
+
+        function exportToCSV() {
+            // In a real implementation, this would generate a CSV file
+            alert('CSV export functionality would be implemented here');
+        }
+
+        function exportToICS() {
+            // In a real implementation, this would generate an ICS file
+            alert('ICS export functionality would be implemented here');
+        }
+
+        // ========== EVENT LISTENERS ==========
+
+        function setupEventListeners() {
+            // Format toggle
+            document.getElementById('formatToggle').addEventListener('change', (e) => {
+                appState.timeFormat = e.target.checked ? '24' : '12';
+                saveState();
+                updateAllClocks();
+            });
+            
+            // Set converter time to now
+            document.getElementById('setToNow').addEventListener('click', () => {
+                const now = new Date();
+                const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+                    .toISOString().slice(0, 16);
+                document.getElementById('converterDateTime').value = localDateTime;
+            });
+            
+            // Convert time
+            document.getElementById('convertTime').addEventListener('click', convertTime);
+            
+            // Export buttons
+            document.getElementById('exportCSV').addEventListener('click', exportToCSV);
+            document.getElementById('exportICS').addEventListener('click', exportToICS);
+            
+            // Work timer controls
+            document.getElementById('startShiftBtn').addEventListener('click', startShift);
+            document.getElementById('startBreakBtn').addEventListener('click', startBreak);
+            document.getElementById('endBreakBtn').addEventListener('click', endBreak);
+            document.getElementById('endShiftBtn').addEventListener('click', endShift);
+            document.getElementById('resetTimer').addEventListener('click', resetTimer);
+            
+            // Settings
+            document.getElementById('defaultStartTime').addEventListener('change', (e) => {
+                appState.workingHours.start = e.target.value;
+                saveState();
+                updateAllClocks();
+            });
+            
+            document.getElementById('defaultEndTime').addEventListener('change', (e) => {
+                appState.workingHours.end = e.target.value;
+                saveState();
+                updateAllClocks();
+            });
+            
+            document.getElementById('enableDSTAlerts').addEventListener('change', (e) => {
+                appState.dstAlertsEnabled = e.target.checked;
+                saveState();
+                updateAllClocks();
+            });
+            
+            document.getElementById('enableSunTimes').addEventListener('change', (e) => {
+                appState.sunTimesEnabled = e.target.checked;
+                saveState();
+                updateAllClocks();
+            });
+            
+            document.getElementById('resetSettings').addEventListener('click', () => {
+                if (confirm('Reset all settings to defaults?')) {
+                    localStorage.removeItem('timehub-state');
+                    location.reload();
+                }
+            });
+            
+            // Delegated event listeners for dynamic elements
+            document.addEventListener('click', (e) => {
+                // Toggle favorite
+                if (e.target.closest('.toggle-favorite')) {
+                    const button = e.target.closest('.toggle-favorite');
+                    const timezoneId = button.getAttribute('data-timezone');
+                    toggleFavorite(timezoneId);
+                }
+                
+                // Edit label
+                if (e.target.closest('.edit-label')) {
+                    const button = e.target.closest('.edit-label');
+                    const timezoneId = button.getAttribute('data-timezone');
+                    editLabel(timezoneId);
+                }
+                
+                // Delete shift
+                if (e.target.closest('.delete-shift')) {
+                    const button = e.target.closest('.delete-shift');
+                    const shiftId = button.getAttribute('data-shift-id');
+                    deleteShift(shiftId);
+                }
+            });
+            
+            // Setup search functionality
+            setupSearch();
+        }
+
+        // ========== INITIALIZATION ==========
+
+        // Start the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
